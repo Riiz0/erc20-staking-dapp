@@ -1,25 +1,46 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+ERC20 Staking Dapp
+This is a simple decentralized application (dapp) for staking ERC20 tokens. Users can stake their tokens to earn rewards, and they can unstake their tokens at any time.
 
-## Getting Started
+Requirements
+To run this dapp, you will need the following:
 
-First, run the development server:
+Node.js
+MetaMask
+Hardhat
+Installation
+To install the dapp, clone this repository and run the following command:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+npm install
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+This will install all of the necessary dependencies.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## Usage
 
+To start the dapp, run the following command:
+
+npx hardhat node
+
+This will start a Hardhat development node.
+
+To stake tokens, open MetaMask and connect to the Hardhat development node. Then, call the stake() function in the staking contract.
+
+To unstake tokens, call the unstake() function in the staking contract.
+
+Rewards
+Rewards are distributed to stakers based on the amount of tokens they have staked and the staking reward rate. The staking reward rate is set by the contract owner.
+
+Deployment
+To deploy the dapp to a production network, you will need to compile and deploy the staking contract. You can do this using the Hardhat deploy task.
+
+Once the contract is deployed, you will need to update the stakingContractAddress variable in the dapp's frontend code.
+
+Documentation
+For more information, please see the following documentation:
+
+Hardhat documentation: https://hardhat.org/docs
+Hardhat tutorial: https://hardhat.org/tutorial
+Hardhat test framework documentation: https://hardhat.org/hardhat-runner/docs/guides/test-contracts
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
