@@ -9,15 +9,15 @@ export default function Home() {
       <nav className="bg-white w-full fixed top-0 left-0 p-4 flex items-center justify-between border-b border-gray-300">
         <div className="flex items-center">
           <Image
-            src="/logo.svg"  // Replace with your logo image path
+            src="/logo.svg" // Replace with your logo image path
             alt="Logo"
             width={32}
             height={32}
           />
         </div>
         <div className="flex space-x-4">
-          <Link href="/" className="text-black">Stake</Link>
-          <Link href="/more" className="text-black">More</Link>
+          <Link href="/" className="text-black hover:text-blue-500">Stake</Link>
+          <Link href="/more" className="text-black hover:text-blue-500">More</Link>
         </div>
         <button className="bg-black text-white px-4 py-2 rounded">
           DApp
@@ -60,14 +60,14 @@ rel="noopener noreferrer"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Stake{' '}
+          <h2 className={`mb-3 text-2xl font-semibold text-center`}>
+            Stake
             <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
               -&gt;
             </span>
           </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            "Text Here"
+          <p className={`m-0 max-w-[50ch] text-sm opacity-50 text-center`}>
+            "Text Will Be Here To Display The Amount Of APY For Each Stake"
           </p>
         </a>
 
@@ -77,18 +77,22 @@ rel="noopener noreferrer"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Confirm{' '}
+          <h2 className={`mb-3 text-2xl font-semibold text-center`}>
+            Confirm
             <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
               -&gt;
             </span>
           </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            "Text Here"
+          <p className={`m-0 max-w-[50ch] text-sm opacity-50 text-center`}>
+          "Text Will Be Here To Display The Confirm Button For Each Stake"
           </p>
         </a>
       </div>
     </main>
+
+    <footer className="bg-white w-full fixed bottom-0 left-0 p-4 flex items-center justify-center border-t border-gray-300">
+      <p className="text-center text-black">Staking Project Created For Your Eyes Only</p>
+    </footer>
   </div>
   )
 }

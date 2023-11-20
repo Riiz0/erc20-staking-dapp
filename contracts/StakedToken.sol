@@ -13,4 +13,7 @@ contract StakedToken is ERC20, ERC20Burnable, Ownable {
     }
 
     //burn function
+    function burn(address to, uint256 amount) public {
+        _burn(to, amount);
+    }
 }
