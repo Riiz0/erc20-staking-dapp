@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract StakedToken is ERC20, ERC20Burnable, Ownable {
     constructor() ERC20("StakedToken", "SKTK") {}
 
+    //mint function
     function mint(address to, uint256 amount) public onlyOwner {
         _mint(to, amount);
     }
