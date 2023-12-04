@@ -19,9 +19,6 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     //minimum staking period
     uint256 public minimumStakingPeriod;
 
-    //a slashing percentage for penalizing malicious behavior
-    uint256 public slashingPercentage;
-
     //A mapping of the user address to their staked token balances
     mapping(address => uint256) public stakedBalances;
 
@@ -52,11 +49,10 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     //an event emitted when the owner updates the withdral fee percentage
     event WithdrawalFeePercentage(uint256 newWithdrawalFeePercentage);
 
-    constructor(address _stakedTokenAddress, uint256 _minimumStakingPeriodInSeconds, uint256 _slashingPercentage, uint256 _withdrawalFeePercentage) 
+    constructor(address _stakedTokenAddress, uint256 _minimumStakingPeriodInSeconds, uint256 _withdrawalFeePercentage) 
     {
         stakedToken = IERC20(_stakedTokenAddress);
         minimumStakingPeriod = _minimumStakingPeriodInSeconds;
-        slashingPercentage = _slashingPercentage;
         withdrawalFeePercentage = _withdrawalFeePercentage;
     }
 

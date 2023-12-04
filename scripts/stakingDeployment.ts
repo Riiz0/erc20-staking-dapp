@@ -1,20 +1,36 @@
-import { ethers } from "hardhat";
+const { ethers } = require("hardhat");
 
 async function main() {
-  // Get the StakedToken contract factory
-  const StakedTokenFactory = await ethers.getContractFactory("StakedToken");
+  // Get the StakingContract contract factory
+  const StakingContractFactory = await ethers.getContractFactory("StakingContract");
 
-  // Deploy the StakedToken contract
-  const stakedToken = await StakedTokenFactory.deploy();
-  await stakedToken.deployed();
+  // Get the StakedToken contract address
+  const stakedTokenAddress = process.env.STAKED_TOKEN_ADDRESS;
 
-  console.log("StakedToken deployed to:", stakedToken.address);
+  // Validate the `STAKED_TOKEN_ADDRESS` environment variable
+  if (!stakedTokenAddress) {
+    console.error("Missing or invalid `STAKED_TOKEN_ADDRESS` environment variable");
+    return;
+  }
+
+  console.log("STAKED_TOKEN_ADDRESS:", stakedTokenAddress);
+
+  // Get the minimumStakingPeriod, slashingPercentage, and withdrawalFeePercentage
+  const minimumStakingPeriod = parseInt(process.env.MINIMUM_STAKING_PERIOD || "0");
+  const withdrawalFeePercentage = parseInt(process.env.WITHDRAWAL_FEE_PERCENTAGE || "0");
+
+  // Deploy the StakingContract contract
+  const stakingContract = await StakingContractFactory.deploy(
+    stakedTokenAddress,
+    minimumStakingPeriod,
+    withdrawalFeePercentage
+  );
+  await stakingContract.deployed();
+
+  console.log("StakingContract deployed to:", stakingContract.address);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main().catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  });
-  
+  console.error(error);
+  process.exitCode = 1;
+});
