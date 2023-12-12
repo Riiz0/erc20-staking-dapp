@@ -7,14 +7,6 @@ async function main() {
   // Get the StakedToken contract address
   const stakedTokenAddress = process.env.STAKED_TOKEN_ADDRESS;
 
-  // Validate the `STAKED_TOKEN_ADDRESS` environment variable
-  if (!stakedTokenAddress) {
-    console.error("Missing or invalid `STAKED_TOKEN_ADDRESS` environment variable");
-    return;
-  }
-
-  console.log("STAKED_TOKEN_ADDRESS:", stakedTokenAddress);
-
   // Get the minimumStakingPeriod, slashingPercentage, and withdrawalFeePercentage
   const minimumStakingPeriod = parseInt(process.env.MINIMUM_STAKING_PERIOD || "0");
   const withdrawalFeePercentage = parseInt(process.env.WITHDRAWAL_FEE_PERCENTAGE || "0");

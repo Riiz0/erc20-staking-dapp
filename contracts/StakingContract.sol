@@ -10,135 +10,116 @@ import "./StakedToken.sol";
 contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    //The ERC20 token that is being staked
     IERC20 public stakedToken;
-
-    //the total number of tokens staked
     uint256 public totalStaked;
-
-    //minimum staking period
-    uint256 public minimumStakingPeriod;
-
-    //A mapping of the user address to their staked token balances
-    mapping(address => uint256) public stakedBalances;
-
-    // A mapping to track staking start times for each user
-    mapping(address => uint256) private stakingStartTimes;
-
-    //the staked reward rate, expressed in a precentage
     uint256 public rewardRate;
+    uint256 public unstakingFeePercentage;
+    uint256 public unstakeGracePeriod;
 
-    //The last reward timestamp
-    uint256 public lastRewardTimestamp;
+    mapping(address => uint256) public stakedBalances;
+    mapping(address => uint256) private unstakeRequestTimes;
 
-    //a withdrawal fee percentage for covering operational costs
-    uint256 public withdrawalFeePercentage;
-
-    //an event emitted when a user stakes tokens
     event Stake(address indexed staker, uint256 amount, uint256 stakingTimestamp);
-
-    //an event emitted when a user unstakes tokens
     event Unstake(address indexed unstaker, uint256 amount, uint256 rewardsClaimed);
-
-    //an event emitted when staking rewards are distributed
     event RewardDistribution(address indexed account, uint256 amount);
-
-    //an event emitted when the owner updates the reward rate
     event RewardRateUpdated(uint256 newRewardRate);
+    event UnstakingFeeUpdated(uint256 newUnstakingFee);
+    event UnstakeGracePeriodUpdated(uint256 newUnstakeGracePeriod);
 
-    //an event emitted when the owner updates the withdral fee percentage
-    event WithdrawalFeePercentage(uint256 newWithdrawalFeePercentage);
-
-    constructor(address _stakedTokenAddress, uint256 _minimumStakingPeriodInSeconds, uint256 _withdrawalFeePercentage) 
-    {
+    constructor(
+        address _stakedTokenAddress,
+        uint256 _rewardRate,
+        uint256 _unstakingFeePercentage,
+        uint256 _unstakeGracePeriod
+    ){
         stakedToken = IERC20(_stakedTokenAddress);
-        minimumStakingPeriod = _minimumStakingPeriodInSeconds;
-        withdrawalFeePercentage = _withdrawalFeePercentage;
+        rewardRate = _rewardRate;
+        unstakingFeePercentage = _unstakingFeePercentage;
+        unstakeGracePeriod = _unstakeGracePeriod;
     }
 
-    function stake(uint256 amount) public {
-        // Allows users to stake their tokens
+    receive() external payable {
+        // Handle received Ether here, if needed
+    }
+
+    function stake(uint256 amount) external nonReentrant whenNotPaused {
         require(amount > 0, "Staking amount must be greater than zero");
 
-        // Transfer the staked tokens from the user to the contract
-        stakedToken.safeTransferFrom(msg.sender, address(this), amount);
+        // Ensure that the staking contract has sufficient allowance to transfer tokens on behalf of the user
+        require(stakedToken.allowance(msg.sender, address(this)) >= amount, "Insufficient allowance");
 
-        // Update the users staked balance and the total staked amount
+        // Transfer the staked tokens from the user to the contract
+        stakedToken.transferFrom(msg.sender, address(this), amount);
+
         stakedBalances[msg.sender] += amount;
         totalStaked += amount;
 
-        // Record the staking start time for the user
-        stakingStartTimes[msg.sender] = block.timestamp;
-
-        //Emit the Stake Event
         emit Stake(msg.sender, amount, block.timestamp);
     }
 
-    // Define the _getStakingStartTime function outside of the unstake function
-    function _getStakingStartTime(address account) private view returns (uint256) {
-        return stakingStartTimes[account];
-    }
-    
-    function unstake(uint256 amount) public {
-        // Allows users to unstake their tokens
-       require (amount > 0, "Unstaked amount must be greater than zero");
-       require(stakedBalances[msg.sender] >= amount, "Insufficient staked balance");
+    function unstake(uint256 amount) external nonReentrant whenNotPaused {
+        require(amount > 0, "Unstaked amount must be greater than zero");
+        require(stakedBalances[msg.sender] >= amount, "Insufficient staked balance");
 
-        // Check if the minimum staking period has elapsed
-        require(block.timestamp >= _getStakingStartTime(msg.sender) + minimumStakingPeriod, "Minimum staking period not yet met");
+        // Ensure the user has passed the unstake grace period
+        require(block.timestamp >= unstakeRequestTimes[msg.sender] + unstakeGracePeriod, "Unstake grace period not met");
 
-        // Calculate the withdrawal fee
-        uint256 withdrawalFee = amount * withdrawalFeePercentage / 100;
+        uint256 withdrawalFee = (amount * unstakingFeePercentage) / 100;
+        uint256 netAmount = amount - withdrawalFee;
 
-        // Calculate the rewards for the user
-        uint256 rewardsClaimed = calculateRewards(msg.sender);
+        stakedToken.safeTransfer(msg.sender, netAmount);
 
-        // Transfer the staked tokens from the contract to the user balance
-        stakedToken.safeTransfer(msg.sender, amount - withdrawalFee);
-
-        //Update the users Staked balance and the total staked amount
         stakedBalances[msg.sender] -= amount;
         totalStaked -= amount;
 
-        //Emit the Unstake Event
-        emit Unstake(msg.sender, amount, rewardsClaimed);
+        emit Unstake(msg.sender, amount, withdrawalFee);
     }
 
-    function claimRewards() public {
-        // Calculate the accumulated rewards for the user
+    function claimRewards() external nonReentrant whenNotPaused {
         uint256 rewards = calculateRewards(msg.sender);
 
-        // Transfer the rewards to the user
         stakedToken.safeTransfer(msg.sender, rewards);
 
-        // Update the last reward timestamp
-        lastRewardTimestamp = block.timestamp;
-
-        // Emit the RewardsDistributed event
         emit RewardDistribution(msg.sender, rewards);
     }
 
     function calculateRewards(address account) public view returns (uint256) {
-        // Calculate time elapsed since last reward distribution
-        uint256 timeElapsed = block.timestamp - lastRewardTimestamp;
+        if (totalStaked == 0) {
+            // No staking has occurred, return 0 rewards
+            return 0;
+        }
 
-        // Calculate annual rewards based on staked balance and reward rate
-        uint256 annualRewards = stakedBalances[account] * rewardRate / 100;
+        uint256 stakingStartTime = unstakeRequestTimes[account] - totalStaked / rewardRate;
+        if (block.timestamp <= stakingStartTime) {
+            // Staking hasn't started yet, return 0 rewards
+            return 0;
+        }
 
-        // Calculate accumulated rewards based on time elapsed and annual rewards
-        uint256 accumulatedRewards = annualRewards * timeElapsed / 365 days;
+        uint256 timeElapsed = block.timestamp - stakingStartTime;
+        uint256 annualRewards = (stakedBalances[account] * rewardRate) / 100;
+        uint256 accumulatedRewards = (annualRewards * timeElapsed) / 365 days;
 
         return accumulatedRewards;
     }
 
-    function setRewardRate(uint256 newRewardRate) public onlyOwner {
-    // Validate the new reward rate
-    require(newRewardRate <= 100, "Reward rate cannot exceed 100%");
+    function setRewardRate(uint256 newRewardRate) external onlyOwner {
+        require(newRewardRate <= 100, "Reward rate cannot exceed 100%");
+        rewardRate = newRewardRate;
+        emit RewardRateUpdated(newRewardRate);
+    }
 
-    // Update the reward rate
-    rewardRate = newRewardRate;
+    function setUnstakingFee(uint256 newUnstakingFee) external onlyOwner {
+        require(newUnstakingFee <= 100, "Unstaking fee cannot exceed 100%");
+        unstakingFeePercentage = newUnstakingFee;
+        emit UnstakingFeeUpdated(newUnstakingFee);
+    }
 
-    // Emit an event indicating that the reward rate has been changed
-    emit RewardRateUpdated(newRewardRate);
+    function setUnstakeGracePeriod(uint256 newUnstakeGracePeriod) external onlyOwner {
+        unstakeGracePeriod = newUnstakeGracePeriod;
+        emit UnstakeGracePeriodUpdated(newUnstakeGracePeriod);
+    }
+
+    function requestUnstake() external whenNotPaused {
+        unstakeRequestTimes[msg.sender] = block.timestamp;
     }
 }

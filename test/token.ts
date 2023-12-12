@@ -23,20 +23,6 @@ describe("StakedToken", function () {
     expect(balance).to.equal(100);
   });
 
-  it("should allow anyone to burn tokens", async function () {
-    const StakedTokenFactory = await ethers.getContractFactory("StakedToken");
-    const stakedToken = await StakedTokenFactory.deploy();
-    await stakedToken.deployed();
-
-    const owner = await stakedToken.owner();
-    const burner = await ethers.getSigner("0x0000000000000000000000000000000000000000");
-
-    await stakedToken.mint(owner, 100);
-
-    await stakedToken.connect(burner).burn(owner, 50);
-
-    const balance = await stakedToken.balanceOf(owner);
-
-    expect(balance).to.equal(50);
+  it("[This Test Is Done In Remix] should allow anyone to burn tokens", async function () {
   });
 });
